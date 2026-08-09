@@ -776,7 +776,7 @@
         }
     }
 
-    function getApiKey(currentProvider) {
+    function getApiKey(p) {
         const encoded = localStorage.getItem(STORAGE_KEYS.API_KEY);
         if (encoded) { try { return atob(encoded); } catch { return null; } }
         // Fallback: try Android SharedPreferences
@@ -798,7 +798,7 @@
         };
     }
 
-    function getBalanceHistory(currentProvider) {
+    function getBalanceHistory(p) {
         return getStorage(STORAGE_KEYS.BALANCE_HISTORY) || [];
     }
 
@@ -806,7 +806,7 @@
         return getStorage(STORAGE_KEYS.MODEL_USAGE) || {};
     }
 
-    function getInitialBalance(currentProvider) {
+    function getInitialBalance(p) {
         return getStorage(STORAGE_KEYS.INITIAL_BALANCE);
     }
 
@@ -896,7 +896,6 @@
 
     function renderTrendChart(period) {
 	const history = getBalanceHistory(currentProvider);
-        	const history = getBalanceHistory(currentProvider);
 	updateMiniCards();
         const canvas = document.getElementById('trendChart');
         const empty = document.getElementById('trendEmpty');
@@ -1069,7 +1068,6 @@
     // ==================== Stats Calculation ====================
     function updateStats() {
 	const history = getBalanceHistory(currentProvider);
-        	const history = getBalanceHistory(currentProvider);
 	updateMiniCards();
         const now = Date.now();
         const today = new Date().toDateString();
@@ -1133,45 +1131,33 @@
 
     // ==================== UI Updates ====================
     function updateBalanceDisplay(balanceData) {
-        const container = document.getElementById('balanceDisplay');
-        const meta = document.getElementById('balanceMeta');
-
-        if (!balanceData) {
-            container.innerHTML = '<span style="font-size:24px;color:var(--text-muted);">未设置</span>';
-            meta.innerHTML = '<span>🔑 请设置 API Key</span>';
-            drawBalanceRing(0);
-            return;
-        }
-
-        const { balance, toppedUp, granted, currency } = balanceData;
-        container.innerHTML = `
-            <span class="balance-amount">${balance.toFixed(2)}</span>
-            <span class="balance-currency">${currency}</span>
-        `;
-        meta.innerHTML = `
-            <span>💰 充值 ${toppedUp.toFixed(2)}</span>
-            ${granted > 0 ? `<span>🎁 赠送 ${granted.toFixed(2)}</span>` : ''}
-        `;
-
-        // Calculate used percentage based on initial balance
-        const initialBalance = getInitialBalance(currentProvider);
-        let usedPercent = 0;
-        if (initialBalance && initialBalance > 0) {
-            usedPercent = ((initialBalance - balance) / initialBalance) * 100;
-            usedPercent = Math.max(0, Math.min(100, usedPercent));
-        }
-        drawBalanceRing(usedPercent);
-
-        // Store initial balance for percentage tracking
-        if (!initialBalance || balance > initialBalance) {
-            setInitialBalance(currentProvider, balance);
-        }
+	const container = document.getElementById('balanceDisplay');
+	const meta = document.getElementById('balanceMeta');
+	const tokenInfo = document.getElementById('tokenInfo');
+	const label = document.getElementById('balanceLabel');
+	const p = getProvider();
+	if (label) label.textContent = p.name + ' 余额';
+	if (!balanceData) {
+		container.innerHTML = '<span style="font-size:24px;color:var(--text-muted);">未设置</span>';
+		meta.innerHTML = '<span>请设置 '+p.name+' API Key</span>';
+		if (tokenInfo) tokenInfo.innerHTML = '';
+		drawBalanceRing(0); return;
+	}
+	const { balance, toppedUp, granted, currency, tokens } = balanceData;
+	container.innerHTML = '<span class="balance-amount">'+balance.toFixed(2)+'</span><span class="balance-currency">'+currency+'</span>';
+	meta.innerHTML = '<span>充值 '+toppedUp.toFixed(2)+'</span>'+(granted>0?'<span>赠送 '+granted.toFixed(2)+'</span>':'');
+	if (tokenInfo && tokens > 0) tokenInfo.innerHTML = '已消耗 <span class="token-num">'+formatTokens(tokens)+'</span> tokens';
+	else if (tokenInfo) tokenInfo.innerHTML = p.id==='deepseek' ? '（Token数需手动记录）' : '';
+	const ib = getInitialBalance(currentProvider); let up = 0;
+	if (ib && ib > 0) { up = ((ib - balance) / ib) * 100; up = Math.max(0, Math.min(100, up)); }
+	drawBalanceRing(up);
+	if (!ib || balance > ib) setInitialBalance(currentProvider, balance);
+	updateMiniCards();
+}
     }
 
     function updateHistoryList() {
-	const history = getBalanceHistory(currentProvider);
-        	const history = getBalanceHistory(currentProvider);
-	updateMiniCards();
+		const history = getBalanceHistory(currentProvider);
         const list = document.getElementById('historyList');
         const empty = document.getElementById('historyEmpty');
 
@@ -1342,7 +1328,6 @@
 
     function deleteHistoryEntry(index) {
 	const history = getBalanceHistory(currentProvider);
-        	const history = getBalanceHistory(currentProvider);
 	updateMiniCards();
         const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
         const removed = sorted.splice(index, 1)[0];
@@ -1520,8 +1505,38 @@
     }
 
     // ==================== Init ====================
-    function init() {
-	updateMiniCards();
+    
+	function getProvider() { return PROVIDERS[currentProvider]; }`n`tfunction switchProvider(pid) {
+		currentProvider = pid;
+		document.querySelectorAll('.provider-tab').forEach(t => t.classList.toggle('active', t.dataset.provider === pid));
+		document.querySelectorAll('.mini-balance-card').forEach(c => {
+			const cid = c.id === 'miniDeepseek' ? 'deepseek' : 'kimi';
+			c.classList.toggle('active', cid === pid);
+		});
+		updateBalanceDisplay(getLatestBalance(pid));
+		updateHistoryList();
+		updateStats();
+		renderTrendChart(currentPeriod);
+	}
+	function getLatestBalance(pid) {
+		const h = getBalanceHistory(pid);
+		if (h.length === 0) return null;
+		const latest = h.reduce((a,b) => new Date(a.date) > new Date(b.date) ? a : b);
+		return { balance: latest.balance, toppedUp: latest.toppedUp||0, granted: latest.granted||0, currency: latest.currency||'CNY', tokens: latest.tokens||0 };
+	}
+	function updateMiniCards() {
+		['deepseek','kimi'].forEach(pid => {
+			const d = getLatestBalance(pid);
+			const cap = pid === 'deepseek' ? 'Deepseek' : 'Kimi';
+			const el = document.getElementById('mini'+cap+'Bal');
+			const tk = document.getElementById('mini'+cap+'Tokens');
+			if (el) el.textContent = d ? '¥ ' + d.balance.toFixed(2) : '¥ --';
+			if (tk) tk.textContent = d && d.tokens > 0 ? formatTokens(d.tokens) + ' tokens' : '';
+		});
+	}
+
+	function init() {
+		updateMiniCards();
         updateSettingsNotification();
 
         // Load stored balance
