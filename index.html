@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0e17">
+    <title>DeepSeek 消费仪表盘</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --bg-card: rgba(255,255,255,0.03);
+            --bg-card-hover: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.08);
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59,130,246,0.3);
+            --teal: #06b6d4;
+            --teal-glow: rgba(6,182,212,0.3);
+            --purple: #8b5cf6;
+            --purple-glow: rgba(139,92,246,0.3);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --safe-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'MiSans', 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(59,130,246,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(6,182,212,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.04) 0%, transparent 70%);
+        }
+
+        /* ── Container ── */
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px 16px var(--safe-bottom);
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 4px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: linear-gradient(to bottom, var(--bg) 60%, transparent);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), var(--teal));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .header-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+        .header-subtitle { font-size: 11px; color: var(--text-secondary); font-weight: 400; }
+        .header-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+        .icon-btn:active { transform: scale(0.92); background: var(--bg-card-hover); }
+        .icon-btn.has-notification::after {
+            content: '';
+            position: absolute;
+            top: 8px; right: 8px;
+            width: 7px; height: 7px;
+            background: var(--danger);
+            border-radius: 50%;
+        }
+
+        /* ── Balance Hero Card ── */
+        .balance-card {
+            background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(6,182,212,0.08));
+            border: 1px solid rgba(59,130,246,0.15);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+            animation: cardIn 0.5s ease-out;
+        }
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 120px; height: 120px;
+            background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .balance-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .balance-amount {
+            font-size: 42px; font-weight: 800; letter-spacing: -1px;
+            background: linear-gradient(135deg, #e2e8f0, #bae6fd);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .balance-currency { font-size: 16px; color: var(--text-secondary); font-weight: 500; margin-left: 4px; }
+        .balance-meta { display: flex; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+        .balance-meta span { display: flex; align-items: center; gap: 4px; }
+        .balance-ring {
+            position: absolute;
+            right: 16px; top: 50%;
+            transform: translateY(-50%);
+            width: 80px; height: 80px;
+        }
+        .balance-skeleton {
+            animation: pulse 1.5s ease-in-out infinite;
+            background: var(--bg-card-hover);
+            border-radius: 8px;
+            height: 42px; width: 160px;
+        }
+
+        /* ── Stats Row ── */
+        .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 12px;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .stat-card:active { transform: scale(0.96); background: var(--bg-card-hover); }
+        .stat-icon { font-size: 20px; margin-bottom: 6px; }
+        .stat-value { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+        .stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-trend { font-size: 10px; margin-top: 2px; }
+        .stat-trend.up { color: var(--danger); }
+        .stat-trend.down { color: var(--success); }
+        .stat-trend.stable { color: var(--text-muted); }
+
+        /* ── Chart Section ── */
+        .section { margin-bottom: 12px; }
+        .section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 4px; margin-bottom: 8px;
+        }
+        .section-title { font-size: 14px; font-weight: 600; color: var(--text); }
+        .section-badge {
+            font-size: 10px; padding: 3px 8px;
+            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .section-badge:active { background: var(--bg-card-hover); }
+        .section-badge.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            position: relative;
+        }
+        .chart-container { position: relative; height: 200px; width: 100%; }
+        .chart-container.tall { height: 260px; }
+        .chart-empty {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .chart-empty-icon { font-size: 36px; margin-bottom: 8px; opacity: 0.5; }
+
+        /* ── Model Breakdown ── */
+        .model-list { margin-top: 12px; }
+        .model-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .model-item:last-child { border-bottom: none; }
+        .model-info { display: flex; align-items: center; gap: 10px; }
+        .model-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .model-name { font-size: 13px; font-weight: 500; }
+        .model-tokens { font-size: 11px; color: var(--text-muted); }
+        .model-cost { font-size: 13px; font-weight: 600; text-align: right; }
+        .model-pct { font-size: 10px; color: var(--text-muted); }
+
+        /* ── History ── */
+        .history-list { max-height: 300px; overflow-y: auto; }
+        .history-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 4px;
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
+        }
+        .history-date { font-size: 13px; }
+        .history-time { font-size: 11px; color: var(--text-muted); }
+        .history-balance { font-size: 14px; font-weight: 600; }
+        .history-delta { font-size: 11px; margin-left: 8px; }
+        .history-delta.negative { color: var(--danger); }
+        .history-delta.positive { color: var(--success); }
+        .empty-state {
+            text-align: center; padding: 32px 16px;
+            color: var(--text-muted);
+        }
+        .empty-state-icon { font-size: 40px; margin-bottom: 8px; opacity: 0.4; }
+        .empty-state-text { font-size: 13px; }
+        .empty-state-hint { font-size: 11px; margin-top: 4px; opacity: 0.7; }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #2563eb);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        .btn-primary:active { transform: scale(0.95); opacity: 0.9; }
+        .btn-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-secondary:active { background: var(--bg-card-hover); }
+        .btn-block { width: 100%; }
+        .btn-sm { padding: 6px 14px; font-size: 11px; border-radius: 20px; }
+        .btn-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--accent);
+            border: none; color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px var(--accent-glow);
+            transition: var(--transition);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-icon:active { transform: scale(0.9); }
+
+        /* ── Floating Action ── */
+        .fab {
+            position: fixed;
+            bottom: calc(20px + var(--safe-bottom));
+            right: 20px;
+            z-index: 20;
+        }
+        .fab-menu {
+            position: absolute;
+            bottom: 56px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: var(--transition);
+        }
+        .fab-menu.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .fab-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 8px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text);
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+        .fab-item:active { background: var(--bg-card-hover); }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            display: flex; align-items: flex-end;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
+        .modal {
+            background: #111827;
+            border-radius: 20px 20px 0 0;
+            width: 100%; max-width: 480px;
+            margin: 0 auto;
+            padding: 8px 0 0;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal-overlay.open .modal { transform: translateY(0); }
+        .modal-handle {
+            width: 36px; height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 8px auto 16px;
+        }
+        .modal-title { font-size: 17px; font-weight: 700; padding: 0 20px 12px; }
+        .modal-body { padding: 0 20px 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label {
+            display: block;
+            font-size: 12px; color: var(--text-secondary);
+            margin-bottom: 6px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .form-input::placeholder { color: var(--text-muted); }
+        .form-row { display: flex; gap: 8px; }
+        .form-row > * { flex: 1; }
+        .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .form-toggle {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+        .toggle-switch {
+            width: 44px; height: 26px;
+            background: var(--border);
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .toggle-switch.on { background: var(--accent); }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px; left: 3px;
+            width: 20px; height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        .toggle-switch.on::after { left: 21px; }
+
+        /* ── Toast ── */
+        .toast-container {
+            position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+            z-index: 200;
+            display: flex; flex-direction: column; gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            padding: 12px 18px;
+            background: #1e293b;
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            font-size: 13px;
+            color: var(--text);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: toastIn 0.4s ease-out;
+            pointer-events: auto;
+            display: flex; align-items: center; gap: 8px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--danger); }
+        .toast.removing { animation: toastOut 0.3s ease-in forwards; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { to { opacity: 0; transform: translateY(-20px); } }
+
+        /* ── Refresh indicator ── */
+        .refreshing .refresh-icon { animation: spin 0.8s linear infinite; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+        /* ── Quick-add form ── */
+        .quick-add {
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-top: 12px;
+        }
+        .quick-add-title { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; }
+        .quick-add-row { display: flex; gap: 8px; }
+        .quick-add-input {
+            flex: 1;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+        }
+        .quick-add-input:focus { outline: none; border-color: var(--accent); }
+
+        /* ── Delete btn ── */
+        .delete-btn {
+            color: var(--danger);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px 8px;
+            background: none;
+            border: none;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        .history-item:hover .delete-btn { opacity: 1; }
+
+        /* ── Responsive adjustments ── */
+        @media (min-width: 480px) {
+            .app-container { padding: 20px 24px var(--safe-bottom); }
+            .balance-amount { font-size: 48px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo-icon">🐋</div>
+                <div>
+                    <div class="header-title">DeepSeek</div>
+                    <div class="header-subtitle">API 消费仪表盘</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="refreshData()" title="刷新" id="refreshBtn">
+                    <span class="refresh-icon">🔄</span>
+                </button>
+                <button class="icon-btn" onclick="openSettings()" title="设置" id="settingsBtn">
+                    ⚙️
+                </button>
+            </div>
+        </header>
+
+        <!-- Balance Hero -->
+        <div class="balance-card" id="balanceCard">
+            <div class="balance-label">当前余额</div>
+            <div id="balanceDisplay">
+                <span class="balance-skeleton" style="display:inline-block;"></span>
+            </div>
+            <div class="balance-meta" id="balanceMeta"></div>
+            <canvas class="balance-ring" id="balanceRing" width="80" height="80"></canvas>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card" onclick="switchChartPeriod('day')" id="statToday">
+                <div class="stat-icon">📆</div>
+                <div class="stat-value" id="statTodayVal">--</div>
+                <div class="stat-label">今日消耗</div>
+                <div class="stat-trend stable" id="statTodayTrend"></div>
+            </div>
+            <div class="stat-card" onclick="switchChartPeriod('week')" id="statWeek">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" id="statWeekVal">--</div>
+                <div class="stat-label">本周消耗</div>
+                <div class="stat-trend stable" id="statWeekTrend"></div>
+            </div>
+            <div class="stat-card" onclick="switchChartPeriod('month')" id="statMonth">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="statMonthVal">--</div>
+                <div class="stat-label">本月消耗</div>
+                <div class="stat-trend stable" id="statMonthTrend"></div>
+            </div>
+        </div>
+
+        <!-- Consumption Chart -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">📈 消费趋势</span>
+                <div style="display:flex;gap:6px;">
+                    <span class="section-badge active" data-period="week" onclick="switchChartPeriod('week')">7天</span>
+                    <span class="section-badge" data-period="month" onclick="switchChartPeriod('month')">30天</span>
+                    <span class="section-badge" data-period="all" onclick="switchChartPeriod('all')">全部</span>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-container" id="trendChartContainer">
+                    <div class="chart-empty" id="trendEmpty">
+                        <div class="chart-empty-icon">📉</div>
+                        <div>暂无消费数据</div>
+                        <div style="font-size:11px;margin-top:4px;opacity:0.7;">刷新余额后将自动记录</div>
+                    </div>
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Breakdown -->
+        <div class="section" id="modelSection">
+            <div class="section-header">
+                <span class="section-title">🤖 模型用量分布</span>
+            </div>
+            <div class="chart-card">
+                <div class="chart-container tall" id="modelChartContainer">
+                    <div class="chart-empty" id="modelEmpty">
+                        <div class="chart-empty-icon">🥧</div>
+                        <div>暂无模型数据</div>
+                        <div style="font-size:11px;margin-top:4px;opacity:0.7;">手动记录 API 用量</div>
+                    </div>
+                    <canvas id="modelChart"></canvas>
+                </div>
+                <div class="model-list" id="modelList"></div>
+            </div>
+        </div>
+
+        <!-- Quick Add Usage -->
+        <div class="section">
+            <div class="quick-add">
+                <div class="quick-add-title">✏️ 手动记录用量</div>
+                <div class="quick-add-row">
+                    <select class="quick-add-input" id="quickModel" style="max-width:120px;">
+                        <option value="deepseek-chat">deepseek-chat</option>
+                        <option value="deepseek-reasoner">deepseek-reasoner</option>
+                    </select>
+                    <input class="quick-add-input" type="number" id="quickTokens" placeholder="Token数" min="1" style="max-width:90px;">
+                    <input class="quick-add-input" type="number" id="quickCost" placeholder="费用(¥)" min="0" step="0.001" style="max-width:80px;">
+                    <button class="btn btn-primary btn-sm" onclick="addManualUsage()">记录</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-title">📋 余额记录</span>
+                <button class="btn btn-secondary btn-sm" onclick="clearHistory()" style="font-size:10px;">清空</button>
+            </div>
+            <div class="chart-card">
+                <div class="history-list" id="historyList">
+                    <div class="empty-state" id="historyEmpty">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-text">还没有余额记录</div>
+                        <div class="empty-state-hint">点击右下角刷新按钮获取余额</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab" id="fab">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-item" onclick="refreshData(); toggleFab();">🔄 刷新余额</div>
+            <div class="fab-item" onclick="openSettings(); toggleFab();">⚙️ API 设置</div>
+            <div class="fab-item" onclick="exportData(); toggleFab();">📥 导出数据</div>
+        </div>
+        <button class="btn-icon" onclick="toggleFab()" id="fabBtn">＋</button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-handle"></div>
+            <div class="modal-title">⚙️ 设置</div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">DeepSeek API Key</label>
+                    <input class="form-input" type="password" id="apiKeyInput" placeholder="sk-xxxxxxxxxxxxxxxx">
+                    <div class="form-hint">仅保存在浏览器本地，不会上传到任何服务器</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">模型定价 (¥ / 1M tokens)</label>
+                    <div class="form-row">
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">deepseek-chat 输入</div>
+                            <input class="form-input" type="number" id="priceChatInput" value="1" min="0" step="0.1">
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">deepseek-chat 输出</div>
+                            <input class="form-input" type="number" id="priceChatOutput" value="2" min="0" step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top:8px;">
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">deepseek-reasoner 输入</div>
+                            <input class="form-input" type="number" id="priceReasonerInput" value="4" min="0" step="0.1">
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">deepseek-reasoner 输出</div>
+                            <input class="form-input" type="number" id="priceReasonerOutput" value="16" min="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-toggle">
+                        <span style="font-size:13px;">自动刷新 (每小时)</span>
+                        <div class="toggle-switch" id="autoRefreshToggle" onclick="toggleAutoRefresh()"></div>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-block" onclick="saveSettings()">💾 保存设置</button>
+                <button class="btn btn-secondary btn-block" onclick="closeSettings()" style="margin-top:8px;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+    // ==================== Data Layer ====================
+    const STORAGE_KEYS = {
+        API_KEY: 'ds_dashboard_apikey',
+        BALANCE_HISTORY: 'ds_dashboard_history',
+        MODEL_USAGE: 'ds_dashboard_models',
+        PRICING: 'ds_dashboard_pricing',
+        AUTO_REFRESH: 'ds_dashboard_autorefresh',
+        INITIAL_BALANCE: 'ds_dashboard_initial',
+    };
+
+    function getStorage(key) {
+        try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+    }
+    function setStorage(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function getApiKey() {
+        const encoded = localStorage.getItem(STORAGE_KEYS.API_KEY);
+        if (!encoded) return null;
+        try { return atob(encoded); } catch { return null; }
+    }
+    function setApiKey(key) {
+        if (key) localStorage.setItem(STORAGE_KEYS.API_KEY, btoa(key));
+        else localStorage.removeItem(STORAGE_KEYS.API_KEY);
+    }
+
+    function getPricing() {
+        return getStorage(STORAGE_KEYS.PRICING) || {
+            'deepseek-chat': { input: 1, output: 2 },
+            'deepseek-reasoner': { input: 4, output: 16 },
+        };
+    }
+
+    function getBalanceHistory() {
+        return getStorage(STORAGE_KEYS.BALANCE_HISTORY) || [];
+    }
+
+    function getModelUsage() {
+        return getStorage(STORAGE_KEYS.MODEL_USAGE) || {};
+    }
+
+    function getInitialBalance() {
+        return getStorage(STORAGE_KEYS.INITIAL_BALANCE);
+    }
+
+    // ==================== API Calls ====================
+    async function fetchBalance() {
+        const apiKey = getApiKey();
+        if (!apiKey) {
+            showToast('请先设置 API Key', 'error');
+            openSettings();
+            return null;
+        }
+        try {
+            const resp = await fetch('https://api.deepseek.com/user/balance', {
+                headers: { 'Authorization': `Bearer ${apiKey}` },
+            });
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                throw new Error(err.error?.message || `HTTP ${resp.status}`);
+            }
+            const data = await resp.json();
+            if (!data.is_available) throw new Error('余额查询不可用');
+            const info = data.balance_infos?.[0];
+            if (!info) throw new Error('余额数据为空');
+            return {
+                balance: parseFloat(info.total_balance),
+                toppedUp: parseFloat(info.topped_up_balance),
+                granted: parseFloat(info.granted_balance),
+                currency: info.currency,
+            };
+        } catch (e) {
+            showToast(`获取余额失败: ${e.message}`, 'error');
+            return null;
+        }
+    }
+
+    // ==================== Balance Ring ====================
+    function drawBalanceRing(usedPercent) {
+        const canvas = document.getElementById('balanceRing');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+        const cx = w/2, cy = h/2, r = 32, lineW = 5;
+        ctx.clearRect(0, 0, w, h);
+
+        // Background ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = lineW;
+        ctx.stroke();
+
+        // Progress ring
+        const pct = Math.min(Math.max(usedPercent || 0, 0), 100);
+        const startAngle = -Math.PI / 2;
+        const endAngle = startAngle + (Math.PI * 2 * pct / 100);
+
+        const gradient = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+        if (pct > 80) {
+            gradient.addColorStop(0, '#ef4444');
+            gradient.addColorStop(1, '#f59e0b');
+        } else if (pct > 50) {
+            gradient.addColorStop(0, '#f59e0b');
+            gradient.addColorStop(1, '#3b82f6');
+        } else {
+            gradient.addColorStop(0, '#3b82f6');
+            gradient.addColorStop(1, '#06b6d4');
+        }
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, startAngle, endAngle);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = lineW;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Center percentage
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'bold 14px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${Math.round(pct)}%`, cx, cy);
+    }
+
+    // ==================== Charts ====================
+    let trendChart = null;
+    let modelChart = null;
+
+    function renderTrendChart(period) {
+        const history = getBalanceHistory();
+        const canvas = document.getElementById('trendChart');
+        const empty = document.getElementById('trendEmpty');
+
+        if (history.length < 2) {
+            canvas.style.display = 'none';
+            empty.style.display = 'flex';
+            return;
+        }
+
+        canvas.style.display = 'block';
+        empty.style.display = 'none';
+
+        // Filter by period
+        let filtered = history;
+        const now = Date.now();
+        if (period === 'week') {
+            filtered = history.filter(h => now - new Date(h.date).getTime() <= 7 * 86400000);
+        } else if (period === 'month') {
+            filtered = history.filter(h => now - new Date(h.date).getTime() <= 30 * 86400000);
+        }
+
+        if (filtered.length < 2) filtered = history.slice(-7);
+
+        // Sort by date
+        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        const labels = filtered.map(h => {
+            const d = new Date(h.date);
+            return `${d.getMonth()+1}/${d.getDate()}`;
+        });
+        const data = filtered.map(h => h.balance);
+
+        if (trendChart) trendChart.destroy();
+
+        const ctx = canvas.getContext('2d');
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: '余额 (¥)',
+                    data,
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6,182,212,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#06b6d4',
+                    pointBorderColor: '#0a0e17',
+                    pointBorderWidth: 2,
+                    borderWidth: 2,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#94a3b8',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: ctx => `¥ ${ctx.parsed.y.toFixed(2)}`,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#64748b', font: { size: 10 } },
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                    },
+                    y: {
+                        ticks: {
+                            color: '#64748b',
+                            font: { size: 10 },
+                            callback: v => `¥${v.toFixed(2)}`,
+                        },
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                    },
+                },
+                interaction: { intersect: false, mode: 'index' },
+            },
+        });
+    }
+
+    function renderModelChart() {
+        const usage = getModelUsage();
+        const canvas = document.getElementById('modelChart');
+        const empty = document.getElementById('modelEmpty');
+        const listContainer = document.getElementById('modelList');
+
+        const entries = Object.entries(usage).filter(([,v]) => v.tokens > 0);
+        if (entries.length === 0) {
+            canvas.style.display = 'none';
+            empty.style.display = 'flex';
+            listContainer.innerHTML = '';
+            return;
+        }
+
+        canvas.style.display = 'block';
+        empty.style.display = 'none';
+
+        const colors = ['#3b82f6', '#06b6d4', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444'];
+        const totalCost = entries.reduce((sum, [,v]) => sum + (v.cost || 0), 0);
+
+        if (modelChart) modelChart.destroy();
+        const ctx = canvas.getContext('2d');
+        modelChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: entries.map(([k]) => k),
+                datasets: [{
+                    data: entries.map(([,v]) => v.cost || 0.001),
+                    backgroundColor: entries.map((_, i) => colors[i % colors.length]),
+                    borderColor: '#0a0e17',
+                    borderWidth: 2,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        callbacks: {
+                            label: ctx => {
+                                const pct = totalCost > 0 ? ((ctx.parsed / totalCost) * 100).toFixed(1) : '0';
+                                return ` ¥${ctx.parsed.toFixed(2)} (${pct}%)`;
+                            },
+                        },
+                    },
+                },
+                cutout: '60%',
+            },
+        });
+
+        // Model list
+        listContainer.innerHTML = entries.map(([model, data], i) => {
+            const pct = totalCost > 0 ? ((data.cost / totalCost) * 100).toFixed(1) : '0';
+            return `
+                <div class="model-item">
+                    <div class="model-info">
+                        <div class="model-dot" style="background:${colors[i % colors.length]};"></div>
+                        <div>
+                            <div class="model-name">${model}</div>
+                            <div class="model-tokens">${formatTokens(data.tokens)} tokens</div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="model-cost">¥${data.cost.toFixed(2)}</div>
+                        <div class="model-pct">${pct}%</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function formatTokens(n) {
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+        if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+        return n.toString();
+    }
+
+    // ==================== Stats Calculation ====================
+    function updateStats() {
+        const history = getBalanceHistory();
+        const now = Date.now();
+        const today = new Date().toDateString();
+        const initialBalance = getInitialBalance();
+
+        // Get earliest and latest balance today, this week, this month
+        const todayRecords = history.filter(h => new Date(h.date).toDateString() === today);
+        const weekRecords = history.filter(h => now - new Date(h.date).getTime() <= 7 * 86400000);
+        const monthRecords = history.filter(h => now - new Date(h.date).getTime() <= 30 * 86400000);
+
+        function calcDelta(records) {
+            if (records.length < 2) return { value: null, trend: 'stable' };
+            records.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const delta = records[0].balance - records[records.length - 1].balance;
+            return {
+                value: delta,
+                trend: delta > 0.001 ? 'up' : delta < -0.001 ? 'down' : 'stable',
+            };
+        }
+
+        const todayDelta = calcDelta(todayRecords);
+        const weekDelta = calcDelta(weekRecords);
+        const monthDelta = calcDelta(monthRecords);
+
+        function setStat(id, valId, trendId, delta) {
+            if (delta.value === null) {
+                document.getElementById(valId).textContent = '--';
+                const trendEl = document.getElementById(trendId);
+                trendEl.textContent = '';
+                trendEl.className = 'stat-trend stable';
+            } else {
+                const absVal = Math.abs(delta.value);
+                document.getElementById(valId).textContent = `¥${absVal.toFixed(2)}`;
+                const trendEl = document.getElementById(trendId);
+                if (delta.trend === 'up') {
+                    trendEl.textContent = '↑ 充值';
+                    trendEl.className = 'stat-trend up';
+                } else if (delta.trend === 'down') {
+                    trendEl.textContent = '↓ 消费';
+                    trendEl.className = 'stat-trend down';
+                } else {
+                    trendEl.textContent = '→ 持平';
+                    trendEl.className = 'stat-trend stable';
+                }
+            }
+        }
+
+        setStat('statToday', 'statTodayVal', 'statTodayTrend', todayDelta);
+        setStat('statWeek', 'statWeekVal', 'statWeekTrend', weekDelta);
+        setStat('statMonth', 'statMonthVal', 'statMonthTrend', monthDelta);
+
+        // Update stat card active state
+        document.querySelectorAll('.stat-card').forEach(c => c.style.borderColor = '');
+        const activeStat = document.getElementById(`stat${capitalize(currentPeriod)}`);
+        if (currentPeriod === 'day') document.getElementById('statToday').style.borderColor = 'var(--accent)';
+        else if (currentPeriod === 'week') document.getElementById('statWeek').style.borderColor = 'var(--accent)';
+        else document.getElementById('statMonth').style.borderColor = 'var(--accent)';
+    }
+
+    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    // ==================== UI Updates ====================
+    function updateBalanceDisplay(balanceData) {
+        const container = document.getElementById('balanceDisplay');
+        const meta = document.getElementById('balanceMeta');
+
+        if (!balanceData) {
+            container.innerHTML = '<span style="font-size:24px;color:var(--text-muted);">未设置</span>';
+            meta.innerHTML = '<span>🔑 请设置 API Key</span>';
+            drawBalanceRing(0);
+            return;
+        }
+
+        const { balance, toppedUp, granted, currency } = balanceData;
+        container.innerHTML = `
+            <span class="balance-amount">${balance.toFixed(2)}</span>
+            <span class="balance-currency">${currency}</span>
+        `;
+        meta.innerHTML = `
+            <span>💰 充值 ${toppedUp.toFixed(2)}</span>
+            ${granted > 0 ? `<span>🎁 赠送 ${granted.toFixed(2)}</span>` : ''}
+        `;
+
+        // Calculate used percentage based on initial balance
+        const initialBalance = getInitialBalance();
+        let usedPercent = 0;
+        if (initialBalance && initialBalance > 0) {
+            usedPercent = ((initialBalance - balance) / initialBalance) * 100;
+            usedPercent = Math.max(0, Math.min(100, usedPercent));
+        }
+        drawBalanceRing(usedPercent);
+
+        // Store initial balance for percentage tracking
+        if (!initialBalance || balance > initialBalance) {
+            setStorage(STORAGE_KEYS.INITIAL_BALANCE, balance);
+        }
+    }
+
+    function updateHistoryList() {
+        const history = getBalanceHistory();
+        const list = document.getElementById('historyList');
+        const empty = document.getElementById('historyEmpty');
+
+        if (history.length === 0) {
+            list.innerHTML = '';
+            list.appendChild(empty);
+            empty.style.display = 'block';
+            return;
+        }
+
+        empty.style.display = 'none';
+        const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const recent = sorted.slice(0, 30);
+
+        list.innerHTML = recent.map((h, i) => {
+            const d = new Date(h.date);
+            const dateStr = `${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`;
+            const timeStr = `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+
+            let deltaHtml = '';
+            if (i < recent.length - 1) {
+                const delta = h.balance - recent[i + 1].balance;
+                if (Math.abs(delta) > 0.0001) {
+                    const cls = delta < 0 ? 'negative' : 'positive';
+                    const sign = delta < 0 ? '' : '+';
+                    deltaHtml = `<span class="history-delta ${cls}">${sign}¥${delta.toFixed(2)}</span>`;
+                }
+            }
+
+            return `
+                <div class="history-item">
+                    <div>
+                        <div class="history-date">${dateStr}</div>
+                        <div class="history-time">${timeStr}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="history-balance">¥${h.balance.toFixed(2)}</div>
+                        ${deltaHtml}
+                    </div>
+                    <button class="delete-btn" onclick="deleteHistoryEntry(${i})" title="删除">✕</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ==================== Actions ====================
+    async function refreshData() {
+        const btn = document.getElementById('refreshBtn');
+        btn.classList.add('refreshing');
+
+        const balanceData = await fetchBalance();
+        if (balanceData) {
+            // Save to history
+            const history = getBalanceHistory();
+            const now = new Date().toISOString();
+            const lastRecord = history[history.length - 1];
+
+            // Only save if balance changed or more than 10 minutes since last record
+            const shouldSave = !lastRecord ||
+                Math.abs(lastRecord.balance - balanceData.balance) > 0.0001 ||
+                (Date.now() - new Date(lastRecord.date).getTime()) > 600000;
+
+            if (shouldSave) {
+                history.push({
+                    date: now,
+                    balance: balanceData.balance,
+                    toppedUp: balanceData.toppedUp,
+                    granted: balanceData.granted,
+                    currency: balanceData.currency,
+                });
+                // Keep max 365 days
+                if (history.length > 365) history.shift();
+                setStorage(STORAGE_KEYS.BALANCE_HISTORY, history);
+            }
+
+            updateBalanceDisplay(balanceData);
+            updateHistoryList();
+            updateStats();
+            renderTrendChart(currentPeriod);
+
+            if (shouldSave) {
+                showToast(`余额: ¥${balanceData.balance.toFixed(2)}`, 'success');
+            } else {
+                showToast('余额无变化', 'success');
+            }
+        }
+
+        setTimeout(() => btn.classList.remove('refreshing'), 600);
+    }
+
+    let currentPeriod = 'week';
+    function switchChartPeriod(period) {
+        currentPeriod = period;
+        document.querySelectorAll('.section-badge').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.section-badge[data-period="${period}"]`)?.classList.add('active');
+        renderTrendChart(period);
+        updateStats();
+    }
+
+    function addManualUsage() {
+        const model = document.getElementById('quickModel').value;
+        const tokens = parseInt(document.getElementById('quickTokens').value);
+        const cost = parseFloat(document.getElementById('quickCost').value);
+
+        if (!tokens || tokens <= 0) {
+            showToast('请输入有效的 Token 数', 'error');
+            return;
+        }
+        if (isNaN(cost) || cost < 0) {
+            showToast('请输入有效的费用', 'error');
+            return;
+        }
+
+        const usage = getModelUsage();
+        if (!usage[model]) usage[model] = { tokens: 0, cost: 0 };
+        usage[model].tokens += tokens;
+        usage[model].cost += cost;
+        setStorage(STORAGE_KEYS.MODEL_USAGE, usage);
+
+        renderModelChart();
+        document.getElementById('quickTokens').value = '';
+        document.getElementById('quickCost').value = '';
+        showToast(`已记录: ${model} ${formatTokens(tokens)} tokens, ¥${cost.toFixed(2)}`, 'success');
+    }
+
+    function deleteHistoryEntry(index) {
+        const history = getBalanceHistory();
+        const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const removed = sorted.splice(index, 1)[0];
+        // Re-sort to chronological for storage
+        const updated = sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
+        setStorage(STORAGE_KEYS.BALANCE_HISTORY, updated);
+        updateHistoryList();
+        updateStats();
+        renderTrendChart(currentPeriod);
+        showToast('已删除记录', 'success');
+    }
+
+    function clearHistory() {
+        if (confirm('确定要清空所有余额记录吗？此操作不可撤销。')) {
+            setStorage(STORAGE_KEYS.BALANCE_HISTORY, []);
+            setStorage(STORAGE_KEYS.INITIAL_BALANCE, null);
+            setStorage(STORAGE_KEYS.MODEL_USAGE, {});
+            updateBalanceDisplay(null);
+            updateHistoryList();
+            updateStats();
+            renderTrendChart(currentPeriod);
+            renderModelChart();
+            showToast('已清空所有记录', 'success');
+        }
+    }
+
+    function exportData() {
+        const data = {
+            exportTime: new Date().toISOString(),
+            balanceHistory: getBalanceHistory(),
+            modelUsage: getModelUsage(),
+            initialBalance: getInitialBalance(),
+            pricing: getPricing(),
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `deepseek-dashboard-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('数据已导出', 'success');
+    }
+
+    // ==================== Settings ====================
+    function openSettings() {
+        document.getElementById('settingsModal').classList.add('open');
+        document.getElementById('apiKeyInput').value = getApiKey() || '';
+
+        const pricing = getPricing();
+        document.getElementById('priceChatInput').value = pricing['deepseek-chat']?.input ?? 1;
+        document.getElementById('priceChatOutput').value = pricing['deepseek-chat']?.output ?? 2;
+        document.getElementById('priceReasonerInput').value = pricing['deepseek-reasoner']?.input ?? 4;
+        document.getElementById('priceReasonerOutput').value = pricing['deepseek-reasoner']?.output ?? 16;
+
+        const autoRefresh = getStorage(STORAGE_KEYS.AUTO_REFRESH);
+        const toggle = document.getElementById('autoRefreshToggle');
+        if (autoRefresh) toggle.classList.add('on');
+        else toggle.classList.remove('on');
+
+        updateSettingsNotification();
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsModal').classList.remove('open');
+    }
+
+    function saveSettings() {
+        const apiKey = document.getElementById('apiKeyInput').value.trim();
+        setApiKey(apiKey);
+
+        const pricing = {
+            'deepseek-chat': {
+                input: parseFloat(document.getElementById('priceChatInput').value) || 1,
+                output: parseFloat(document.getElementById('priceChatOutput').value) || 2,
+            },
+            'deepseek-reasoner': {
+                input: parseFloat(document.getElementById('priceReasonerInput').value) || 4,
+                output: parseFloat(document.getElementById('priceReasonerOutput').value) || 16,
+            },
+        };
+        setStorage(STORAGE_KEYS.PRICING, pricing);
+
+        closeSettings();
+        updateSettingsNotification();
+        showToast('设置已保存', 'success');
+
+        if (apiKey) refreshData();
+    }
+
+    function toggleAutoRefresh() {
+        const toggle = document.getElementById('autoRefreshToggle');
+        const current = getStorage(STORAGE_KEYS.AUTO_REFRESH);
+        const newVal = !current;
+        setStorage(STORAGE_KEYS.AUTO_REFRESH, newVal);
+        if (newVal) {
+            toggle.classList.add('on');
+            startAutoRefresh();
+            showToast('自动刷新已开启 (每小时)', 'success');
+        } else {
+            toggle.classList.remove('on');
+            stopAutoRefresh();
+            showToast('自动刷新已关闭', 'success');
+        }
+    }
+
+    function updateSettingsNotification() {
+        const btn = document.getElementById('settingsBtn');
+        if (!getApiKey()) {
+            btn.classList.add('has-notification');
+        } else {
+            btn.classList.remove('has-notification');
+        }
+    }
+
+    let autoRefreshInterval = null;
+    function startAutoRefresh() {
+        stopAutoRefresh();
+        autoRefreshInterval = setInterval(() => {
+            if (getApiKey()) refreshData();
+        }, 3600000); // 1 hour
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+        }
+    }
+
+    // ==================== FAB ====================
+    function toggleFab() {
+        const menu = document.getElementById('fabMenu');
+        const btn = document.getElementById('fabBtn');
+        const isOpen = menu.classList.contains('open');
+        if (isOpen) {
+            menu.classList.remove('open');
+            btn.textContent = '＋';
+        } else {
+            menu.classList.add('open');
+            btn.textContent = '✕';
+        }
+    }
+
+    // Close FAB when clicking outside
+    document.addEventListener('click', (e) => {
+        const fab = document.getElementById('fab');
+        const menu = document.getElementById('fabMenu');
+        if (!fab.contains(e.target) && menu.classList.contains('open')) {
+            toggleFab();
+        }
+    });
+
+    // Close modal on overlay click
+    document.getElementById('settingsModal').addEventListener('click', function(e) {
+        if (e.target === this) closeSettings();
+    });
+
+    // ==================== Toast ====================
+    function showToast(message, type = '') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icons = { success: '✅', error: '❌' };
+        toast.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('removing');
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+
+    // ==================== Init ====================
+    function init() {
+        updateSettingsNotification();
+
+        // Load stored balance
+        const history = getBalanceHistory();
+        if (history.length > 0) {
+            const latest = history.reduce((a, b) =>
+                new Date(a.date) > new Date(b.date) ? a : b
+            );
+            updateBalanceDisplay({
+                balance: latest.balance,
+                toppedUp: latest.toppedUp || 0,
+                granted: latest.granted || 0,
+                currency: latest.currency || 'CNY',
+            });
+        } else {
+            updateBalanceDisplay(null);
+        }
+
+        updateHistoryList();
+        updateStats();
+        renderTrendChart('week');
+        renderModelChart();
+
+        // Auto refresh if enabled
+        if (getStorage(STORAGE_KEYS.AUTO_REFRESH)) {
+            document.getElementById('autoRefreshToggle').classList.add('on');
+            // Do initial fetch if has API key
+            if (getApiKey()) {
+                setTimeout(() => refreshData(), 1000);
+            }
+            startAutoRefresh();
+        }
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        // Handle visibility change - refresh when app comes to foreground
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && getApiKey()) {
+                const lastRefresh = history.length > 0
+                    ? new Date(history[history.length - 1].date).getTime()
+                    : 0;
+                if (Date.now() - lastRefresh > 300000) { // 5 min
+                    refreshData();
+                }
+            }
+        });
+    }
+
+    init();
+    </script>
+</body>
+</html>
