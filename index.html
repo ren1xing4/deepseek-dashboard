@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -170,49 +170,22 @@
         .stat-trend.down { color: var(--success); }
         .stat-trend.stable { color: var(--text-muted); }
 
-        /* ── Provider Tabs ── */
-        .provider-tabs {
-            display: flex; gap: 8px; margin-bottom: 12px;
-            background: var(--bg-card); border-radius: 25px;
-            border: 1px solid var(--border); padding: 4px;
-        }
-        .provider-tab {
-            flex: 1; padding: 10px 8px; border-radius: 22px;
-            text-align: center; font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: var(--transition);
-            color: var(--text-muted); border: none; background: transparent;
-            font-family: inherit;
-        }
-        .provider-tab.active {
-            background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(6,182,212,0.15));
-            color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .provider-tab:active { transform: scale(0.96); }
-
-        /* ── Token display ── */
-        .token-info {
-            display: flex; align-items: center; gap: 6px;
-            font-size: 12px; color: var(--text-muted);
-            margin-top: 6px;
-        }
-        .token-info .token-num {
-            color: var(--teal); font-weight: 600;
-        }
-
-        /* ── Dual balance cards ── */
-        .dual-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .mini-balance-card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: var(--radius-sm); padding: 14px;
-            cursor: pointer; transition: var(--transition); position: relative;
-            overflow: hidden;
-        }
-        .mini-balance-card:active { transform: scale(0.96); }
-        .mini-balance-card.active { border-color: var(--accent); background: rgba(59,130,246,0.06); }
-        .mini-balance-icon { font-size: 22px; margin-bottom: 6px; }
-        .mini-balance-name { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .mini-balance-value { font-size: 20px; font-weight: 700; margin-top: 2px; }
-        .mini-balance-tokens { font-size: 10px; color: var(--teal); margin-top: 2px; }
+        /* ── Provider tabs ── */
+        .provider-tabs { display:flex; gap:8px; margin-bottom:12px; background:var(--bg-card); border-radius:25px; border:1px solid var(--border); padding:4px; }
+        .provider-tab { flex:1; padding:10px 8px; border-radius:22px; text-align:center; font-size:13px; font-weight:600; cursor:pointer; transition:var(--transition); color:var(--text-muted); border:none; background:transparent; font-family:inherit; }
+        .provider-tab.active { background:linear-gradient(135deg,rgba(59,130,246,0.25),rgba(6,182,212,0.15)); color:var(--text); }
+        .provider-tab:active { transform:scale(0.96); }
+        /* ── Dual cards ── */
+        .dual-cards { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+        .mini-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; cursor:pointer; transition:var(--transition); }
+        .mini-card.active { border-color:var(--accent); background:rgba(59,130,246,0.06); }
+        .mini-card:active { transform:scale(0.96); }
+        .mini-card-icon { font-size:22px; margin-bottom:6px; }
+        .mini-card-name { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+        .mini-card-val { font-size:20px; font-weight:700; margin-top:2px; }
+        .mini-card-tokens { font-size:10px; color:var(--teal); margin-top:2px; }
+        .token-row { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); margin-top:6px; }
+        .token-num { color:var(--teal); font-weight:600; }
 
         /* ── Chart Section ── */
         .section { margin-bottom: 12px; }
@@ -547,35 +520,31 @@
         </header>
 
         <!-- Provider Tabs -->
-        <div class="provider-tabs" id="providerTabs">
-            <button class="provider-tab active" data-provider="deepseek" onclick="switchProvider('deepseek')">🐋 DeepSeek</button>
-            <button class="provider-tab" data-provider="kimi" onclick="switchProvider('kimi')">🌙 Kimi</button>
+        <div class="provider-tabs">
+            <button class="provider-tab active" data-p="deepseek" onclick="switchProvider('deepseek')">🐋 DeepSeek</button>
+            <button class="provider-tab" data-p="kimi" onclick="switchProvider('kimi')">🌙 Kimi</button>
         </div>
-
-        <!-- Dual Balance Mini Cards -->
+        <!-- Dual Balance Cards -->
         <div class="dual-cards">
-            <div class="mini-balance-card active" id="miniDeepseek" onclick="switchProvider('deepseek')">
-                <div class="mini-balance-icon">🐋</div>
-                <div class="mini-balance-name">DeepSeek</div>
-                <div class="mini-balance-value" id="miniDeepseekBal">¥ --</div>
-                <div class="mini-balance-tokens" id="miniDeepseekTokens"></div>
+            <div class="mini-card active" id="miniDs" onclick="switchProvider('deepseek')">
+                <div class="mini-card-icon">🐋</div><div class="mini-card-name">DeepSeek</div>
+                <div class="mini-card-val" id="miniDsBal">¥ --</div>
+                <div class="mini-card-tokens" id="miniDsTokens"></div>
             </div>
-            <div class="mini-balance-card" id="miniKimi" onclick="switchProvider('kimi')">
-                <div class="mini-balance-icon">🌙</div>
-                <div class="mini-balance-name">Kimi</div>
-                <div class="mini-balance-value" id="miniKimiBal">¥ --</div>
-                <div class="mini-balance-tokens" id="miniKimiTokens"></div>
+            <div class="mini-card" id="miniKimi" onclick="switchProvider('kimi')">
+                <div class="mini-card-icon">🌙</div><div class="mini-card-name">Kimi</div>
+                <div class="mini-card-val" id="miniKimiBal">¥ --</div>
+                <div class="mini-card-tokens" id="miniKimiTokens"></div>
             </div>
         </div>
-
-        <!-- Balance Detail Card (selected provider) -->
+        <!-- Balance Hero -->
         <div class="balance-card" id="balanceCard">
-            <div class="balance-label" id="balanceLabel">DeepSeek 余额</div>
+            <div class="balance-label">当前余额</div>
             <div id="balanceDisplay">
                 <span class="balance-skeleton" style="display:inline-block;"></span>
             </div>
-            <div class="token-info" id="tokenInfo"></div>
             <div class="balance-meta" id="balanceMeta"></div>
+            <div class="token-row" id="tokenInfo"></div>
             <canvas class="balance-ring" id="balanceRing" width="80" height="80"></canvas>
         </div>
 
@@ -757,38 +726,14 @@
         localStorage.setItem(key, JSON.stringify(value));
     }
 
-    // Check if running inside Android APK (has native bridge)
-    function isInAndroid() {
-        return typeof AndroidWidget !== 'undefined' && AndroidWidget.saveBalance;
-    }
-
-    // Sync balance to Android widget
-    function syncBalanceToWidget(balance, todayCost) {
-        if (isInAndroid()) {
-            try { AndroidWidget.saveBalance(String(balance), String(todayCost || 0)); } catch(e) {}
-        }
-    }
-
-    // Sync API key to Android SharedPreferences
-    function syncApiKeyToNative(key) {
-        if (isInAndroid()) {
-            try { AndroidWidget.saveApiKey(key || ''); } catch(e) {}
-        }
-    }
-
-    function getApiKey(p) {
+    function getApiKey() {
         const encoded = localStorage.getItem(STORAGE_KEYS.API_KEY);
-        if (encoded) { try { return atob(encoded); } catch { return null; } }
-        // Fallback: try Android SharedPreferences
-        if (isInAndroid()) {
-            try { const k = AndroidWidget.getApiKey(currentProvider); if (k) return k; } catch(e) {}
-        }
-        return null;
+        if (!encoded) return null;
+        try { return atob(encoded); } catch { return null; }
     }
     function setApiKey(key) {
         if (key) localStorage.setItem(STORAGE_KEYS.API_KEY, btoa(key));
         else localStorage.removeItem(STORAGE_KEYS.API_KEY);
-        syncApiKeyToNative(key);
     }
 
     function getPricing() {
@@ -798,7 +743,7 @@
         };
     }
 
-    function getBalanceHistory(p) {
+    function getBalanceHistory() {
         return getStorage(STORAGE_KEYS.BALANCE_HISTORY) || [];
     }
 
@@ -806,13 +751,13 @@
         return getStorage(STORAGE_KEYS.MODEL_USAGE) || {};
     }
 
-    function getInitialBalance(p) {
+    function getInitialBalance() {
         return getStorage(STORAGE_KEYS.INITIAL_BALANCE);
     }
 
     // ==================== API Calls ====================
-    async function fetchBalanceFor(currentProvider) {
-        const apiKey = getApiKey(currentProvider);
+    async function fetchBalance() {
+        const apiKey = getApiKey();
         if (!apiKey) {
             showToast('请先设置 API Key', 'error');
             openSettings();
@@ -895,8 +840,7 @@
     let modelChart = null;
 
     function renderTrendChart(period) {
-	const history = getBalanceHistory(currentProvider);
-	updateMiniCards();
+        const history = getBalanceHistory();
         const canvas = document.getElementById('trendChart');
         const empty = document.getElementById('trendEmpty');
 
@@ -1067,11 +1011,10 @@
 
     // ==================== Stats Calculation ====================
     function updateStats() {
-	const history = getBalanceHistory(currentProvider);
-	updateMiniCards();
+        const history = getBalanceHistory();
         const now = Date.now();
         const today = new Date().toDateString();
-        const initialBalance = getInitialBalance(currentProvider);
+        const initialBalance = getInitialBalance();
 
         // Get earliest and latest balance today, this week, this month
         const todayRecords = history.filter(h => new Date(h.date).toDateString() === today);
@@ -1131,33 +1074,43 @@
 
     // ==================== UI Updates ====================
     function updateBalanceDisplay(balanceData) {
-	const container = document.getElementById('balanceDisplay');
-	const meta = document.getElementById('balanceMeta');
-	const tokenInfo = document.getElementById('tokenInfo');
-	const label = document.getElementById('balanceLabel');
-	const p = getProvider();
-	if (label) label.textContent = p.name + ' 余额';
-	if (!balanceData) {
-		container.innerHTML = '<span style="font-size:24px;color:var(--text-muted);">未设置</span>';
-		meta.innerHTML = '<span>请设置 '+p.name+' API Key</span>';
-		if (tokenInfo) tokenInfo.innerHTML = '';
-		drawBalanceRing(0); return;
-	}
-	const { balance, toppedUp, granted, currency, tokens } = balanceData;
-	container.innerHTML = '<span class="balance-amount">'+balance.toFixed(2)+'</span><span class="balance-currency">'+currency+'</span>';
-	meta.innerHTML = '<span>充值 '+toppedUp.toFixed(2)+'</span>'+(granted>0?'<span>赠送 '+granted.toFixed(2)+'</span>':'');
-	if (tokenInfo && tokens > 0) tokenInfo.innerHTML = '已消耗 <span class="token-num">'+formatTokens(tokens)+'</span> tokens';
-	else if (tokenInfo) tokenInfo.innerHTML = p.id==='deepseek' ? '（Token数需手动记录）' : '';
-	const ib = getInitialBalance(currentProvider); let up = 0;
-	if (ib && ib > 0) { up = ((ib - balance) / ib) * 100; up = Math.max(0, Math.min(100, up)); }
-	drawBalanceRing(up);
-	if (!ib || balance > ib) setInitialBalance(currentProvider, balance);
-	updateMiniCards();
-}
+        const container = document.getElementById('balanceDisplay');
+        const meta = document.getElementById('balanceMeta');
+
+        if (!balanceData) {
+            container.innerHTML = '<span style="font-size:24px;color:var(--text-muted);">未设置</span>';
+            meta.innerHTML = '<span>🔑 请设置 API Key</span>';
+            drawBalanceRing(0);
+            return;
+        }
+
+        const { balance, toppedUp, granted, currency } = balanceData;
+        container.innerHTML = `
+            <span class="balance-amount">${balance.toFixed(2)}</span>
+            <span class="balance-currency">${currency}</span>
+        `;
+        meta.innerHTML = `
+            <span>💰 充值 ${toppedUp.toFixed(2)}</span>
+            ${granted > 0 ? `<span>🎁 赠送 ${granted.toFixed(2)}</span>` : ''}
+        `;
+
+        // Calculate used percentage based on initial balance
+        const initialBalance = getInitialBalance();
+        let usedPercent = 0;
+        if (initialBalance && initialBalance > 0) {
+            usedPercent = ((initialBalance - balance) / initialBalance) * 100;
+            usedPercent = Math.max(0, Math.min(100, usedPercent));
+        }
+        drawBalanceRing(usedPercent);
+
+        // Store initial balance for percentage tracking
+        if (!initialBalance || balance > initialBalance) {
+            setStorage(STORAGE_KEYS.INITIAL_BALANCE, balance);
+        }
     }
 
     function updateHistoryList() {
-		const history = getBalanceHistory(currentProvider);
+        const history = getBalanceHistory();
         const list = document.getElementById('historyList');
         const empty = document.getElementById('historyEmpty');
 
@@ -1205,53 +1158,13 @@
 
     // ==================== Actions ====================
     async function refreshData() {
-	const btn = document.getElementById('refreshBtn');
-	btn.classList.add('refreshing');
-	const pid = currentProvider;
-	const balanceData = await fetchBalanceFor(pid);
-	if (balanceData) {
-		const history = getBalanceHistory(pid);
-		const now = new Date().toISOString();
-		const lastRecord = history[history.length - 1];
-		const shouldSave = !lastRecord ||
-			Math.abs(lastRecord.balance - balanceData.balance) > 0.0001 ||
-			(Date.now() - new Date(lastRecord.date).getTime()) > 600000;
-		if (shouldSave) {
-			history.push({ date: now, balance: balanceData.balance, toppedUp: balanceData.toppedUp, granted: balanceData.granted, currency: balanceData.currency, tokens: balanceData.tokens });
-			if (history.length > 365) history.shift();
-			setBalanceHistory(pid, history);
-		}
-		updateBalanceDisplay(balanceData);
-		updateHistoryList();
-		updateStats();
-		renderTrendChart(currentPeriod);
-		syncBalanceToWidget(balanceData.balance, 0);
-		if (shouldSave) showToast(pid==='deepseek'?'DeepSeek':'Kimi'+': ¥'+balanceData.balance.toFixed(2), 'success');
-		else showToast('余额无变化', 'success');
-	}
-	// Also fetch other provider silently
-	Object.keys(PROVIDERS).forEach(p => {
-		if (p !== pid && getApiKey(p)) {
-			fetchBalanceFor(p).then(bd => {
-				if (bd) {
-					const h = getBalanceHistory(p);
-					const lr = h[h.length-1];
-					const save = !lr || Math.abs(lr.balance-bd.balance)>0.0001 || (Date.now()-new Date(lr.date).getTime())>600000;
-					if (save) { h.push({date:new Date().toISOString(),balance:bd.balance,toppedUp:bd.toppedUp,granted:bd.granted,currency:bd.currency,tokens:bd.tokens}); if(h.length>365)h.shift(); setBalanceHistory(p,h); }
-					updateMiniCards();
-				}
-			});
-		}
-	});
-	setTimeout(() => btn.classList.remove('refreshing'), 600);
         const btn = document.getElementById('refreshBtn');
         btn.classList.add('refreshing');
 
-        const balanceData = await fetchBalanceFor(currentProvider);
+        const balanceData = await fetchBalance();
         if (balanceData) {
             // Save to history
-            	const history = getBalanceHistory(currentProvider);
-	updateMiniCards();
+            const history = getBalanceHistory();
             const now = new Date().toISOString();
             const lastRecord = history[history.length - 1];
 
@@ -1270,16 +1183,13 @@
                 });
                 // Keep max 365 days
                 if (history.length > 365) history.shift();
-                setBalanceHistory(currentProvider, history);
+                setStorage(STORAGE_KEYS.BALANCE_HISTORY, history);
             }
 
             updateBalanceDisplay(balanceData);
             updateHistoryList();
             updateStats();
             renderTrendChart(currentPeriod);
-
-            // Sync to Android widget
-            syncBalanceToWidget(balanceData.balance, 0);
 
             if (shouldSave) {
                 showToast(`余额: ¥${balanceData.balance.toFixed(2)}`, 'success');
@@ -1327,13 +1237,12 @@
     }
 
     function deleteHistoryEntry(index) {
-	const history = getBalanceHistory(currentProvider);
-	updateMiniCards();
+        const history = getBalanceHistory();
         const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date));
         const removed = sorted.splice(index, 1)[0];
         // Re-sort to chronological for storage
         const updated = sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
-        setBalanceHistory(currentProvider, updated);
+        setStorage(STORAGE_KEYS.BALANCE_HISTORY, updated);
         updateHistoryList();
         updateStats();
         renderTrendChart(currentPeriod);
@@ -1342,8 +1251,8 @@
 
     function clearHistory() {
         if (confirm('确定要清空所有余额记录吗？此操作不可撤销。')) {
-            setBalanceHistory(currentProvider, []);
-            setInitialBalance(currentProvider, null);
+            setStorage(STORAGE_KEYS.BALANCE_HISTORY, []);
+            setStorage(STORAGE_KEYS.INITIAL_BALANCE, null);
             setStorage(STORAGE_KEYS.MODEL_USAGE, {});
             updateBalanceDisplay(null);
             updateHistoryList();
@@ -1357,9 +1266,9 @@
     function exportData() {
         const data = {
             exportTime: new Date().toISOString(),
-            deepseekHistory: getBalanceHistory('deepseek'), kimiHistory: getBalanceHistory('kimi'),
+            balanceHistory: getBalanceHistory(),
             modelUsage: getModelUsage(),
-            initialBalance: getInitialBalance(currentProvider),
+            initialBalance: getInitialBalance(),
             pricing: getPricing(),
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1375,8 +1284,7 @@
     // ==================== Settings ====================
     function openSettings() {
         document.getElementById('settingsModal').classList.add('open');
-        document.getElementById('apiKeyInput').value = getApiKey('deepseek') || '';
-		document.getElementById('kimiApiKeyInput').value = getApiKey('kimi') || '';
+        document.getElementById('apiKeyInput').value = getApiKey() || '';
 
         const pricing = getPricing();
         document.getElementById('priceChatInput').value = pricing['deepseek-chat']?.input ?? 1;
@@ -1398,9 +1306,7 @@
 
     function saveSettings() {
         const apiKey = document.getElementById('apiKeyInput').value.trim();
-		const kimiApiKey = document.getElementById('kimiApiKeyInput').value.trim();
-        setApiKeyProvider('deepseek', apiKey);
-		setApiKeyProvider('kimi', kimiApiKey);
+        setApiKey(apiKey);
 
         const pricing = {
             'deepseek-chat': {
@@ -1439,7 +1345,7 @@
 
     function updateSettingsNotification() {
         const btn = document.getElementById('settingsBtn');
-        if (!getApiKey(currentProvider)) {
+        if (!getApiKey()) {
             btn.classList.add('has-notification');
         } else {
             btn.classList.remove('has-notification');
@@ -1450,7 +1356,7 @@
     function startAutoRefresh() {
         stopAutoRefresh();
         autoRefreshInterval = setInterval(() => {
-            if (getApiKey(currentProvider)) refreshData();
+            if (getApiKey()) refreshData();
         }, 3600000); // 1 hour
     }
 
@@ -1506,42 +1412,204 @@
 
     // ==================== Init ====================
     
-	function getProvider() { return PROVIDERS[currentProvider]; }`n`tfunction switchProvider(pid) {
+	// ==================== Multi-Provider Overrides ====================
+	const PROVIDERS = {
+		deepseek:{id:'deepseek',name:'DeepSeek',icon:'🐋',endpoint:'https://api.deepseek.com/user/balance',
+			parse(d){let i=d.balance_infos[0];return{balance:parseFloat(i.total_balance),toppedUp:parseFloat(i.topped_up_balance),granted:parseFloat(i.granted_balance),currency:i.currency,tokens:0};}},
+		kimi:{id:'kimi',name:'Kimi',icon:'🌙',endpoint:'https://api.moonshot.cn/v1/users/me/balance',
+			parse(d){let dd=d.data;return{balance:parseFloat(dd.total_balance)||0,toppedUp:parseFloat(dd.granted_balance)||0,granted:0,currency:'CNY',tokens:parseInt(dd.usage?.total_tokens)||0};}}
+	};
+	let currentProvider = 'deepseek';
+	const KP = {
+		akDS:'ds_dashboard_apikey',akKimi:'ds_dashboard_kimi_apikey',
+		histDS:'ds_dashboard_history',histKimi:'ds_dashboard_kimi_history',
+		initDS:'ds_dashboard_initial',initKimi:'ds_dashboard_kimi_initial'
+	};
+
+	// Override getApiKey
+	const _getApiKey = getApiKey;
+	getApiKey = function(pid) {
+		pid = pid || currentProvider;
+		const k = pid==='kimi' ? KP.akKimi : KP.akDS;
+		const e = localStorage.getItem(k);
+		if (e) { try { return atob(e); } catch { return null; } }
+		if (isInAndroid()) { try { const ak = AndroidWidget.getApiKey(pid); if (ak) return ak; } catch(e) {} }
+		return null;
+	};
+	// Override setApiKey
+	const _setApiKey = setApiKey;
+	setApiKey = function(pid, key) {
+		const k = pid==='kimi' ? KP.akKimi : KP.akDS;
+		if (key) localStorage.setItem(k, btoa(key));
+		else localStorage.removeItem(k);
+		if (isInAndroid()) { try { AndroidWidget.saveApiKey(pid, key||''); } catch(e) {} }
+	};
+	// Override getBalanceHistory
+	getBalanceHistory = function(pid) {
+		pid = pid || currentProvider;
+		const k = pid==='kimi' ? KP.histKimi : KP.histDS;
+		try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; }
+	};
+	// Override save to history
+	const _setHist = (pid,h) => { const k=pid==='kimi'?KP.histKimi:KP.histDS; localStorage.setItem(k,JSON.stringify(h)); };
+	// Override getInitialBalance
+	getInitialBalance = function(pid) {
+		pid = pid || currentProvider;
+		const k = pid==='kimi' ? KP.initKimi : KP.initDS;
+		try { return JSON.parse(localStorage.getItem(k)); } catch { return null; }
+	};
+	// Override save initial balance
+	const _setInit = (pid,v) => { const k=pid==='kimi'?KP.initKimi:KP.initDS; if(v!==null)localStorage.setItem(k,JSON.stringify(v)); else localStorage.removeItem(k); };
+
+	// Override fetchBalance
+	fetchBalance = async function(pid) {
+		pid = pid || currentProvider;
+		const p = PROVIDERS[pid];
+		const ak = getApiKey(pid);
+		if (!ak) { showToast(p.name+': 请先设置API Key','error'); openSettings(); return null; }
+		try {
+			const r = await fetch(p.endpoint,{headers:{'Authorization':'Bearer '+ak}});
+			if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||'HTTP '+r.status);}
+			const d = await r.json();
+			return p.parse(d);
+		}catch(e){showToast(p.name+': '+e.message,'error');return null;}
+	};
+
+	// New functions
+	function switchProvider(pid) {
 		currentProvider = pid;
-		document.querySelectorAll('.provider-tab').forEach(t => t.classList.toggle('active', t.dataset.provider === pid));
-		document.querySelectorAll('.mini-balance-card').forEach(c => {
-			const cid = c.id === 'miniDeepseek' ? 'deepseek' : 'kimi';
-			c.classList.toggle('active', cid === pid);
-		});
+		document.querySelectorAll('.provider-tab').forEach(t=>t.classList.toggle('active',t.dataset.p===pid));
+		document.getElementById('miniDs').classList.toggle('active',pid==='deepseek');
+		document.getElementById('miniKimi').classList.toggle('active',pid==='kimi');
 		updateBalanceDisplay(getLatestBalance(pid));
-		updateHistoryList();
-		updateStats();
-		renderTrendChart(currentPeriod);
+		updateHistoryList(); updateStats(); renderTrendChart(currentPeriod);
 	}
 	function getLatestBalance(pid) {
+		pid = pid || currentProvider;
 		const h = getBalanceHistory(pid);
-		if (h.length === 0) return null;
-		const latest = h.reduce((a,b) => new Date(a.date) > new Date(b.date) ? a : b);
-		return { balance: latest.balance, toppedUp: latest.toppedUp||0, granted: latest.granted||0, currency: latest.currency||'CNY', tokens: latest.tokens||0 };
+		if(!h.length) return null;
+		const l = h.reduce((a,b)=>new Date(a.date)>new Date(b.date)?a:b);
+		return {balance:l.balance,toppedUp:l.toppedUp||0,granted:l.granted||0,currency:l.currency||'CNY',tokens:l.tokens||0};
 	}
 	function updateMiniCards() {
-		['deepseek','kimi'].forEach(pid => {
+		['deepseek','kimi'].forEach(pid=>{
 			const d = getLatestBalance(pid);
-			const cap = pid === 'deepseek' ? 'Deepseek' : 'Kimi';
-			const el = document.getElementById('mini'+cap+'Bal');
-			const tk = document.getElementById('mini'+cap+'Tokens');
-			if (el) el.textContent = d ? '¥ ' + d.balance.toFixed(2) : '¥ --';
-			if (tk) tk.textContent = d && d.tokens > 0 ? formatTokens(d.tokens) + ' tokens' : '';
+			const cap = pid==='deepseek'?'Ds':'Kimi';
+			const el=document.getElementById('mini'+cap+'Bal');
+			const tk=document.getElementById('mini'+cap+'Tokens');
+			if(el) el.textContent = d ? '¥ '+d.balance.toFixed(2) : '¥ --';
+			if(tk) tk.textContent = d&&d.tokens>0 ? formatTokens(d.tokens)+' tokens' : '';
 		});
 	}
+
+	// Override updateBalanceDisplay to show tokens
+	const _ubd = updateBalanceDisplay;
+	updateBalanceDisplay = function(bd) {
+		const p = PROVIDERS[currentProvider];
+		const tokenInfo = document.getElementById('tokenInfo');
+		if (!bd) {
+			_ubd(bd);
+			if (tokenInfo) tokenInfo.innerHTML = '';
+			return;
+		}
+		_ubd(bd);
+		if (tokenInfo && bd.tokens > 0) tokenInfo.innerHTML = '📊 已消耗 <span class="token-num">'+formatTokens(bd.tokens)+'</span> tokens';
+		else if (tokenInfo) tokenInfo.innerHTML = currentProvider==='deepseek' ? '(Token 数需手动记录)' : '';
+		// Fix initial balance storage
+		const ib = getInitialBalance(currentProvider);
+		if (!ib || bd.balance > ib) _setInit(currentProvider, bd.balance);
+	};
+
+	// Override refreshData 
+	const _rd = refreshData;
+	refreshData = async function() {
+		const pid = currentProvider;
+		const p = PROVIDERS[pid];
+		const btn = document.getElementById('refreshBtn');
+		btn.classList.add('refreshing');
+		const bd = await fetchBalance(pid);
+		if (bd) {
+			const h = getBalanceHistory(pid);
+			const now = new Date().toISOString();
+			const lr = h[h.length-1];
+			const save = !lr || Math.abs(lr.balance-bd.balance)>0.0001 || (Date.now()-new Date(lr.date).getTime())>600000;
+			if (save) {
+				h.push({date:now,balance:bd.balance,toppedUp:bd.toppedUp,granted:bd.granted,currency:bd.currency,tokens:bd.tokens});
+				if(h.length>365)h.shift();
+				_setHist(pid,h);
+			}
+			updateBalanceDisplay(bd);
+			updateHistoryList(); updateStats(); renderTrendChart(currentPeriod);
+			syncBalanceToWidget(bd.balance,0);
+			if(save) showToast(p.name+': ¥'+bd.balance.toFixed(2),'success');
+			else showToast('余额无变化','success');
+		}
+		// Silently fetch other provider
+		if (pid==='deepseek' && getApiKey('kimi')) {
+			fetchBalance('kimi').then(b=>{if(b){const oh=getBalanceHistory('kimi');oh.push({date:new Date().toISOString(),balance:b.balance,toppedUp:b.toppedUp,granted:b.granted,currency:b.currency,tokens:b.tokens});if(oh.length>365)oh.shift();_setHist('kimi',oh);updateMiniCards();}});
+		} else if (pid==='kimi' && getApiKey('deepseek')) {
+			fetchBalance('deepseek').then(b=>{if(b){const oh=getBalanceHistory('deepseek');oh.push({date:new Date().toISOString(),balance:b.balance,toppedUp:b.toppedUp,granted:b.granted,currency:b.currency,tokens:b.tokens});if(oh.length>365)oh.shift();_setHist('deepseek',oh);updateMiniCards();}});
+		}
+		setTimeout(()=>btn.classList.remove('refreshing'),600);
+	};
+
+	// Override openSettings
+	const _os = openSettings;
+	openSettings = function() {
+		_os();
+		document.getElementById('kimiApiKeyInput').value = getApiKey('kimi') || '';
+	};
+
+	// Override saveSettings
+	const _ss = saveSettings;
+	saveSettings = function() {
+		const dsKey = document.getElementById('apiKeyInput').value.trim();
+		const kmKey = document.getElementById('kimiApiKeyInput').value.trim();
+		setApiKey('deepseek', dsKey);
+		setApiKey('kimi', kmKey);
+		// Keep original pricing save
+		const pricing = {
+			'deepseek-chat':{input:parseFloat(document.getElementById('priceChatInput').value)||1,output:parseFloat(document.getElementById('priceChatOutput').value)||2},
+			'deepseek-reasoner':{input:parseFloat(document.getElementById('priceReasonerInput').value)||4,output:parseFloat(document.getElementById('priceReasonerOutput').value)||16}
+		};
+		setStorage(STORAGE_KEYS.PRICING,pricing);
+		closeSettings();
+		updateSettingsNotification();
+		showToast('设置已保存','success');
+		if (dsKey||kmKey) refreshData();
+	};
+
+	// Override clearHistory
+	const _ch = clearHistory;
+	clearHistory = function() {
+		if(confirm('确定要清空所有余额记录吗？')){
+			_setHist('deepseek',[]); _setHist('kimi',[]);
+			_setInit('deepseek',null); _setInit('kimi',null);
+			setStorage(STORAGE_KEYS.MODEL_USAGE,{});
+			updateBalanceDisplay(null); updateHistoryList(); updateStats();
+			renderTrendChart(currentPeriod); renderModelChart(); updateMiniCards();
+			showToast('已清空','success');
+		}
+	};
+
+	// Override deleteHistoryEntry
+	const _dhe = deleteHistoryEntry;
+	deleteHistoryEntry = function(index) {
+		const pid = currentProvider;
+		const h = getBalanceHistory(pid);
+		const sorted = [...h].sort((a,b)=>new Date(b.date)-new Date(a.date));
+		sorted.splice(index,1);
+		_setHist(pid, sorted.sort((a,b)=>new Date(a.date)-new Date(b.date)));
+		updateHistoryList(); updateStats(); renderTrendChart(currentPeriod);
+		showToast('已删除','success');
+	};
 
 	function init() {
 		updateMiniCards();
         updateSettingsNotification();
 
         // Load stored balance
-        	const history = getBalanceHistory(currentProvider);
-	updateMiniCards();
+        const history = getBalanceHistory();
         if (history.length > 0) {
             const latest = history.reduce((a, b) =>
                 new Date(a.date) > new Date(b.date) ? a : b
@@ -1552,7 +1620,6 @@
                 granted: latest.granted || 0,
                 currency: latest.currency || 'CNY',
             });
-            syncBalanceToWidget(latest.balance, 0);
         } else {
             updateBalanceDisplay(null);
         }
@@ -1566,7 +1633,7 @@
         if (getStorage(STORAGE_KEYS.AUTO_REFRESH)) {
             document.getElementById('autoRefreshToggle').classList.add('on');
             // Do initial fetch if has API key
-            if (getApiKey(currentProvider)) {
+            if (getApiKey()) {
                 setTimeout(() => refreshData(), 1000);
             }
             startAutoRefresh();
@@ -1579,7 +1646,7 @@
 
         // Handle visibility change - refresh when app comes to foreground
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && getApiKey(currentProvider)) {
+            if (document.visibilityState === 'visible' && getApiKey()) {
                 const lastRefresh = history.length > 0
                     ? new Date(history[history.length - 1].date).getTime()
                     : 0;
